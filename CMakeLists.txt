@@ -9,10 +9,10 @@ find_package(Threads REQUIRED)
 find_package(benchmark REQUIRED)
 
 add_executable(GTO main.cpp)
-target_compile_options(Yolah PRIVATE -Wall -O3 -march=native -mavx2 -ffast-math -funroll-loops)
+target_compile_options(GTO PRIVATE -Wall -O3 -march=native -mavx2 -ffast-math -funroll-loops)
 
-target_include_directories(Yolah PRIVATE ${Boost_INCLUDE_DIR})
-target_link_libraries(Yolah PRIVATE ${Boost_LIBRARIES})
-target_link_libraries(Yolah PRIVATE TBB::tbb)
-target_link_libraries(Yolah PRIVATE Threads::Threads)
+target_include_directories(GTO PRIVATE ${Boost_INCLUDE_DIR})
+target_link_libraries(GTO PRIVATE ${Boost_LIBRARIES})
+target_link_libraries(GTO PRIVATE TBB::tbb)
+target_link_libraries(GTO PRIVATE Threads::Threads)
 

@@ -1,18 +1,19 @@
 #ifndef ACTION_LIST_H
 #define ACTION_LIST_H
+#include <cstddef>
 
-template<typename Action>
+template<typename Action, int MAX_NB_ACTIONS>
 struct ActionList {
-    Action actionList[MAX_NB_MOVES], *last;
-    explicit ActionList() : last(actionList) {}
-    const Action* begin() const { return actionList; }
+    Action action_list[MAX_NB_ACTIONS], *last;
+    explicit ActionList() : last(action_list) {}
+    const Action* begin() const { return action_list; }
     const Action* end() const { return last; }
-    Action* begin() { return actionList; }
+    Action* begin() { return action_list; }
     Action* end() { return last; }
-    size_t size() const { return last - actionList; }
-    const Action& operator[](size_t i) const { return actionList[i]; }
-    Action& operator[](size_t i) { return actionList[i]; }
-    Action* data() { return actionList; }
+    size_t size() const { return last - action_list; }
+    const Action& operator[](size_t i) const { return action_list[i]; }
+    Action& operator[](size_t i) { return action_list[i]; }
+    Action* data() { return action_list; }
 };
 
 #endif
