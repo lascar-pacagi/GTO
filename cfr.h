@@ -1,8 +1,9 @@
 #ifndef CFR_H
 #define CFR_H
 #include <unordered_map>
+#include "game.h"
 
-template<typename Game, typename Action>
+template<typename Game>
 struct CFR {
     struct Node {
         float regrets[Game::MAX_NB_MOVES];
@@ -19,7 +20,7 @@ struct CFR {
     }
     void solve(size_t nb_iterations) {
         for (size_t i = 0; i < nb_iterations; i++) {
-            for (auto player : { Game::Player1, Game::Player2 }) {
+            for (auto player : { Player1, Player2 }) {
                 Game g;
                 cfr(g, player, 1, 1);
             }

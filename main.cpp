@@ -4,7 +4,7 @@ using namespace std;
 
 int main() {
     //set<pair<int, uint32_t>> states;
-    PRNG prng{std::chrono::system_clock::now().time_since_epoch().count()};
+    PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
     ActionList<Kuhn::Action, 3> actions;
     for (int i = 0; i < 100; i++) {
         Kuhn kuhn;  

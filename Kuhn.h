@@ -21,13 +21,13 @@ struct Kuhn {
     static constexpr int MAX_NB_MOVES = 3;    
     uint32_t action_history = 0;
     int nb_actions = 0;
-    mutable PRNG prng{std::chrono::system_clock::now().time_since_epoch().count()};
+    mutable PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
     State get_state() const {
-        return nb_action << 15 | action_history;
+        return nb_actions << 15 | action_history;
     }
     void set_state(State state) {
         action_history = state & 0x7FFF;
-        nb_action      = state >> 15;
+        nb_actions     = state >> 15;
     }
     void play(Action a) {
         action_history |= int64_t(a) << nb_actions * 3;
