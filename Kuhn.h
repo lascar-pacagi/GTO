@@ -18,7 +18,7 @@ struct Kuhn {
         END   = 7,
     };
     using State = uint32_t;
-    static constexpr int MAX_NB_MOVES = 3;    
+    static constexpr int MAX_NB_ACTIONS = 3;    
     uint32_t action_history = 0;
     int nb_actions = 0;
     mutable PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
@@ -74,7 +74,7 @@ struct Kuhn {
             return ACTIONS[4 + (get_action(0) - JACK) * 3 + reduce(prng.rand<uint32_t>(), 2)];
         }
     }
-    void actions(ActionList<Action, MAX_NB_MOVES>& actions) {
+    void actions(ActionList<Action, MAX_NB_ACTIONS>& actions) {
         Action* action_list = actions.action_list;
         int start = DELTAS[nb_actions];
         start += (nb_actions == 1) * ((get_action(nb_actions - 1) - JACK) * 3) + 
