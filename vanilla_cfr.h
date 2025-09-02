@@ -1,6 +1,5 @@
-#ifndef DCFR_H
-#define DCFR_H
-
+#ifndef VANILLA_CFR_H
+#define VANILLA_CFR_H
 #include <unordered_map>
 #include "game.h"
 #include "action_list.h"
@@ -9,10 +8,9 @@
 #include <array>
 #include "misc.h"
 #include <memory>
-#include <cmath>
 
 template<typename Game>
-struct DCFR {
+struct Vanilla_CFR {
     struct Node {
         double regrets[Game::MAX_NB_ACTIONS]{};
         double strategies[Game::MAX_NB_ACTIONS]{};
@@ -64,14 +62,14 @@ struct DCFR {
         node.nb_actions = nb_actions; 
         return node;
     }
-    double cfr(Game& g, double pi1, double pi2, int iter, double alpha = 1.5, double beta = 0.5) {
+    double cfr(Game& g, double pi1, double pi2) {
         if (g.game_over()) {
             return g.payoff(PLAYER1);
         }
         if (g.is_chance_node()) {
             auto action = g.sample_action();
             g.play(action);
-            double v = cfr(g, pi1, pi2, iter);
+            double v = cfr(g, pi1, pi2);
             g.undo(action);
             return v;
         }
@@ -87,30 +85,25 @@ struct DCFR {
             auto a = actions[i];
             g.play(a);
             if (current_player == PLAYER1) {
-                utils[i] = cfr(g, s[i] * pi1, pi2, iter);
+                utils[i] = cfr(g, s[i] * pi1, pi2);
             } else {
-                utils[i] = cfr(g, pi1, s[i] * pi2, iter);
+                utils[i] = cfr(g, pi1, s[i] * pi2);
             }
             g.undo(a);
             u += s[i] * utils[i];
         }
-        double iter_alpha_weight = std::pow(static_cast<double>(iter), alpha);
-        double iter_beta_weight = std::pow(static_cast<double>(iter), beta);
         for (int i = 0; i < n.nb_actions; i++) {
-            n.regrets[i] += iter_beta_weight * (current_player == PLAYER1 ? pi2 : pi1) * (utils[i] - u) * (current_player == PLAYER1 ? 1 : -1);
-            if (n.regrets[i] < 0) {
-                n.regrets[i] = 0;
-            }
-            n.strategies[i] += iter_alpha_weight * (current_player == PLAYER1 ? pi1 : pi2) * s[i];
+            n.regrets[i] += (current_player == PLAYER1 ? pi2 : pi1) * (utils[i] - u) * (current_player == PLAYER1 ? 1 : -1);
+            n.strategies[i] += (current_player == PLAYER1 ? pi1 : pi2) * s[i];
         }
         return u;
     }
     void solve(size_t nb_iterations) {
         Game g;
         double game_value = 0;
-        for (size_t i = 1; i <= nb_iterations; i++) {
+        for (size_t i = 0; i < nb_iterations; i++) {
             g.reset();
-            game_value += cfr(g, 1, 1, i);                        
+            game_value += cfr(g, 1, 1);                        
         }
         for (auto player : { PLAYER1, PLAYER2 }) {
             Node& n = nodes[player];

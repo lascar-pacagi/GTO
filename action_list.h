@@ -1,6 +1,5 @@
 #ifndef ACTION_LIST_H
 #define ACTION_LIST_H
-#include <cstddef>
 
 template<typename Action, int MAX_NB_ACTIONS>
 struct ActionList {

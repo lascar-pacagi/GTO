@@ -1,29 +1,110 @@
 #include "Kuhn.h"
+#include "simple_poker.h"
+#include "tictactoe.h"
+#include "vanilla_cfr.h"
+#include "cfr.h"
+#include "cfr_plus.h"
+#include "vanilla_cfr_plus.h"
+#include "dcfr.h"
+
 #include <bits/stdc++.h>
 using namespace std;
 
 int main() {
+    constexpr int NB_ITERATIONS = 100000000;
+    cout << "cfr\n";
+    CFR<TicTacToe> cfr;
+    cfr.solve(NB_ITERATIONS);
+    cout << "\n\n";
+    cout << "cfr plus\n";
+    CFR_Plus<TicTacToe> cfr_plus;
+    cfr_plus.solve(NB_ITERATIONS);
+    cout << "\n\n";
+    cout << "vanilla cfr\n";
+    Vanilla_CFR<TicTacToe> vcfr;
+    vcfr.solve(NB_ITERATIONS);
+    cout << "\n\n";
+    cout << "vanilla cfr plus\n";
+    Vanilla_CFR_Plus<TicTacToe> vcfr_plus;    
+    vcfr_plus.solve(NB_ITERATIONS);
+    cout << "\n\n";
+    cout << "dcfr\n";
+    DCFR<TicTacToe> dcfr;    
+    dcfr.solve(NB_ITERATIONS);
+    
+    // TicTacToe ttt;
+
+    // for (;;) {
+    //     ttt.reset();
+    //     cout << ttt << '\n';
+    //     cout << ttt.get_info_set(ttt.current_player()) << '\n';
+    //     while (!ttt.game_over()) {            
+    //         int a;
+    //         cin >> a;
+    //         ttt.play(TicTacToe::Action(a));
+    //         cout << ttt << '\n';
+    //         cout << ttt.get_info_set(ttt.current_player()) << '\n';
+    //     }
+    //     cout << "(" << ttt.payoff(PLAYER1) << ',' << ttt.payoff(PLAYER2) << ")\n";
+    // }
+
     //set<pair<int, uint32_t>> states;
-    PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
-    ActionList<Kuhn::Action, 3> actions;
-    for (int i = 0; i < 100; i++) {
-        Kuhn kuhn;  
-        cout << "#########################\n";      
-        while (!kuhn.game_over()) {
-            Kuhn::Action a;
-            if (kuhn.is_chance_node()) {
-                a = kuhn.sample_action();
-            } else {
-                kuhn.actions(actions);
-                a = actions[reduce(prng.rand<uint32_t>(), actions.size())];
-            }   
-            cout << a << endl;         
-            kuhn.play(a);
-        }
-        cout << kuhn << '\n';
-        cout << kuhn.payoff(PLAYER1) << '\n';       
-        //states.insert(make_pair(kuhn.nb_actions, kuhn.action_history));
-    }
+    // PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
+    // ActionList<Kuhn::Action, 3> actions;
+    // for (int i = 0; i < 100; i++) {
+    //     Kuhn kuhn;  
+    //     cout << "#########################\n";      
+    //     while (!kuhn.game_over()) {
+    //         cout << "* Kuhn\n";
+    //         cout << kuhn << endl;
+    //         cout << "* Kuhn\n";
+    //         cout << "CURRENT PLAYER: " << kuhn.current_player() << '\n';
+    //         Kuhn::Action a;
+    //         if (kuhn.is_chance_node()) {
+    //             a = kuhn.sample_action();
+    //         } else {
+    //             kuhn.actions(actions);
+    //             cout << "** Actions\n";
+    //             for (int i = 0; i < actions.size(); i++) {
+    //                 cout << actions[i] << ' ';
+    //             }
+    //             cout << "\n** Actions\n";
+    //             a = actions[reduce(prng.rand<uint32_t>(), actions.size())];
+    //         }
+    //         cout << "*** Info set\n";
+    //         auto info_set = kuhn.get_info_set(kuhn.current_player());
+    //         if (kuhn.current_player() == PLAYER1) {
+    //             cout << (info_set >> 15) << '\n';
+    //             cout << Kuhn::Action(info_set & 0x7) << ' ';
+    //             cout << Kuhn::Action((info_set >> 3) & 0x7) << ' ';
+    //             cout << Kuhn::Action((info_set >> 6) & 0x7) << ' ';
+    //             cout << Kuhn::Action((info_set >> 9) & 0x7) << ' ';
+    //             cout << Kuhn::Action((info_set >> 12) & 0x7) << ' ';
+    //         } else {
+    //             cout << (info_set >> 15) << '\n';
+    //             cout << Kuhn::Action(info_set & 0x7) << ' ';
+    //             cout << Kuhn::Action((info_set >> 3) & 0x7) << ' ';
+    //             cout << Kuhn::Action((info_set >> 6) & 0x7) << ' ';
+    //             cout << Kuhn::Action((info_set >> 9) & 0x7) << ' ';
+    //             cout << Kuhn::Action((info_set >> 12) & 0x7) << ' ';
+    //         }
+    //         cout << "\n*** Info set\n";
+    //         cout << "--- " << a << endl;
+    //         kuhn.play(a);
+    //         // cout << kuhn << endl;
+    //         kuhn.undo(a);
+    //         kuhn.play(a);
+    //         // auto state = kuhn.get_state();
+    //         // Kuhn kk;
+    //         // kk.set_state(state);
+    //         // cout << kk << endl;            
+    //     }
+    //     cout << kuhn << '\n';
+    //     cout << kuhn.payoff(PLAYER1) << '\n';
+    //     string _;
+    //     getline(cin, _);       
+    //     //states.insert(make_pair(kuhn.nb_actions, kuhn.action_history));
+    // }
     //cout << "size: " << states.size() << '\n';
     // for (const auto [nb_actions, history] : states) {
     //     cout << history << ' ' << std::bitset<32>(history) << '\n';

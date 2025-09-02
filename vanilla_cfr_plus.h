@@ -1,6 +1,5 @@
-#ifndef DCFR_H
-#define DCFR_H
-
+#ifndef VANILLA_CFR_PLUS_H
+#define VANILLA_CFR_PLUS_H
 #include <unordered_map>
 #include "game.h"
 #include "action_list.h"
@@ -9,10 +8,9 @@
 #include <array>
 #include "misc.h"
 #include <memory>
-#include <cmath>
 
 template<typename Game>
-struct DCFR {
+struct Vanilla_CFR_Plus {
     struct Node {
         double regrets[Game::MAX_NB_ACTIONS]{};
         double strategies[Game::MAX_NB_ACTIONS]{};
@@ -64,7 +62,7 @@ struct DCFR {
         node.nb_actions = nb_actions; 
         return node;
     }
-    double cfr(Game& g, double pi1, double pi2, int iter, double alpha = 1.5, double beta = 0.5) {
+    double cfr(Game& g, double pi1, double pi2, int iter) {
         if (g.game_over()) {
             return g.payoff(PLAYER1);
         }
@@ -94,14 +92,10 @@ struct DCFR {
             g.undo(a);
             u += s[i] * utils[i];
         }
-        double iter_alpha_weight = std::pow(static_cast<double>(iter), alpha);
-        double iter_beta_weight = std::pow(static_cast<double>(iter), beta);
         for (int i = 0; i < n.nb_actions; i++) {
-            n.regrets[i] += iter_beta_weight * (current_player == PLAYER1 ? pi2 : pi1) * (utils[i] - u) * (current_player == PLAYER1 ? 1 : -1);
-            if (n.regrets[i] < 0) {
-                n.regrets[i] = 0;
-            }
-            n.strategies[i] += iter_alpha_weight * (current_player == PLAYER1 ? pi1 : pi2) * s[i];
+            n.regrets[i] += (current_player == PLAYER1 ? pi2 : pi1) * (utils[i] - u) * (current_player == PLAYER1 ? 1 : -1);
+            if (n.regrets[i] < 0) n.regrets[i] = 0;
+            n.strategies[i] += (current_player == PLAYER1 ? pi1 : pi2) * s[i];
         }
         return u;
     }

@@ -5,6 +5,7 @@
 #include "action_list.h"
 #include "misc.h"
 #include <chrono>
+#include <iostream>
 
 struct Kuhn {
     enum Action {
@@ -20,34 +21,43 @@ struct Kuhn {
     using State = uint32_t;
     static constexpr int MAX_NB_ACTIONS = 3;    
     uint32_t action_history = 0;
-    int nb_actions = 0;
+    int nb_plies = 0;
     mutable PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
+    void reset() {
+        action_history = 0;
+        nb_plies = 0;
+    }
     State get_state() const {
-        return nb_actions << 15 | action_history;
+        return nb_plies << 15 | action_history;
     }
     void set_state(State state) {
         action_history = state & 0x7FFF;
-        nb_actions     = state >> 15;
+        nb_plies       = state >> 15;
+    }
+    State get_info_set(int player) const {
+        constexpr int32_t mask1 = 0b111111111000111;
+        constexpr int32_t mask2 = 0b111111111111000;
+        return (nb_plies << 15) | ((player == PLAYER1 ? mask1 : mask2) & action_history); 
     }
     void play(Action a) {
-        action_history |= int64_t(a) << nb_actions * 3;
-        ++nb_actions;
+        action_history |= uint32_t(a) << nb_plies * 3;
+        ++nb_plies;
     }
     void undo(Action a) {
-        --nb_actions;
-        action_history &= ~(0b111ull << nb_actions * 3);
+        --nb_plies;
+        action_history &= ~(0b111 << nb_plies * 3);
     }
     int current_player() const {
-        return nb_actions < 2 ? CHANCE : nb_actions & 1;
+        return nb_plies < 2 ? CHANCE : nb_plies & 1;
     }
     Action get_action(int i) const {
-        return Action((action_history & (0b111ull << i * 3)) >> i * 3);
+        return Action((action_history & (0b111 << i * 3)) >> i * 3);
     }
     bool game_over() const {
-        return nb_actions == 5 || (nb_actions == 4 && get_action(nb_actions - 1) != BET);
+        return nb_plies == 5 || (nb_plies == 4 && get_action(nb_plies - 1) != BET);
     }    
     bool is_chance_node() const {
-        return nb_actions < 2;
+        return nb_plies < 2;
     }    
     static constexpr Action ACTIONS[] {
         JACK, QUEEN, KING, END,
@@ -64,11 +74,11 @@ struct Kuhn {
     };
     int payoff(int player) const {
         constexpr uint32_t magic = 3816247202;
-        constexpr int n = 27;        
+        constexpr int n = 27;   
         return PAYOFFS[action_history * magic >> n] * (player == PLAYER1 ? 1 : -1);
     }
     Action sample_action() const {
-        if (nb_actions == 0) {
+        if (nb_plies == 0) {
             return Action(JACK + reduce(prng.rand<uint32_t>(), 3)); 
         } else {
             return ACTIONS[4 + (get_action(0) - JACK) * 3 + reduce(prng.rand<uint32_t>(), 2)];
@@ -76,18 +86,18 @@ struct Kuhn {
     }
     void actions(ActionList<Action, MAX_NB_ACTIONS>& actions) {
         Action* action_list = actions.action_list;
-        int start = DELTAS[nb_actions];
-        start += (nb_actions == 1) * ((get_action(nb_actions - 1) - JACK) * 3) + 
-                (nb_actions == 3) * ((get_action(nb_actions - 1) - CHECK) * 3);
+        int start = DELTAS[nb_plies];
+        start += (nb_plies == 1) * ((get_action(nb_plies - 1) - JACK) * 3) + 
+                (nb_plies == 3) * ((get_action(nb_plies - 1) - CHECK) * 3);
         const Action* moves = ACTIONS + start;
-        for (Action a = *moves; a != END; a = *moves++) {
+        for (Action a = *moves; a != END; a = *++moves) {
             *action_list++ = a;
         }
         actions.last = action_list;
     }
     friend std::ostream& operator<<(std::ostream& os, const Kuhn& kuhn) {
         auto h = kuhn.action_history;
-        for (int i = 0; i < kuhn.nb_actions; i++) {
+        for (int i = 0; i < kuhn.nb_plies; i++) {
             os << Action(h & 0x7) << ' ';
             h >>= 3;
         }
