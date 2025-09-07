@@ -1,39 +1,15 @@
-#include "Kuhn.h"
-#include "simple_poker.h"
 #include "tictactoe.h"
-#include "vanilla_cfr.h"
-#include "cfr.h"
-#include "cfr_plus.h"
-#include "vanilla_cfr_plus.h"
-#include "dcfr.h"
-
+#include "simple_poker.h"
+#include "game_tree.h"
 #include <bits/stdc++.h>
 using namespace std;
 
 int main() {
-    constexpr int NB_ITERATIONS = 100000000;
-    cout << "cfr\n";
-    CFR<TicTacToe> cfr;
-    cfr.solve(NB_ITERATIONS);
-    cout << "\n\n";
-    cout << "cfr plus\n";
-    CFR_Plus<TicTacToe> cfr_plus;
-    cfr_plus.solve(NB_ITERATIONS);
-    cout << "\n\n";
-    cout << "vanilla cfr\n";
-    Vanilla_CFR<TicTacToe> vcfr;
-    vcfr.solve(NB_ITERATIONS);
-    cout << "\n\n";
-    cout << "vanilla cfr plus\n";
-    Vanilla_CFR_Plus<TicTacToe> vcfr_plus;    
-    vcfr_plus.solve(NB_ITERATIONS);
-    cout << "\n\n";
-    cout << "dcfr\n";
-    DCFR<TicTacToe> dcfr;    
-    dcfr.solve(NB_ITERATIONS);
-    
+    // constexpr int NB_ITERATIONS = 100000000;
+    GameTree<SimplePoker> tree;
+    cout << tree.nb_nodes() << '\n';
+    cout << tree << '\n';
     // TicTacToe ttt;
-
     // for (;;) {
     //     ttt.reset();
     //     cout << ttt << '\n';
@@ -147,5 +123,31 @@ int main() {
     //         }
     //         break;
     //     }
+    // }
+
+    // set<SimplePoker::State> states;
+    // PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
+    // List<SimplePoker::Action, SimplePoker::MAX_NB_ACTIONS> actions;
+    // for (int i = 0; i < 100; i++) {
+    //     SimplePoker simple_poker;  
+    //     while (!simple_poker.game_over()) {
+    //         SimplePoker::Action a;
+    //         if (simple_poker.is_chance_node()) {
+    //             a = simple_poker.sample_action();
+    //         } else {
+    //             simple_poker.actions(actions);
+    //             a = actions[reduce(prng.rand<uint32_t>(), actions.size())];
+    //         }
+    //         simple_poker.play(a);
+    //     }
+    //     states.insert(simple_poker.action_history);
+    // }
+    // cout << "size: " << states.size() << '\n';
+    // for (const auto [nb_actions, history] : states) {
+    //     cout << history << ' ' << std::bitset<32>(history) << '\n';
+    //     Kuhn k;
+    //     k.action_history = history;
+    //     k.nb_actions = nb_actions;
+    //     cout << k << '\n';
     // }
 }

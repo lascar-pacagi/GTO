@@ -19,7 +19,8 @@ struct Kuhn {
         END   = 7,
     };
     using State = uint32_t;
-    static constexpr int MAX_NB_ACTIONS = 3;    
+    using InfoSet = uint32_t;
+    static constexpr int MAX_NB_ACTIONS = 3;
     uint32_t action_history = 0;
     int nb_plies = 0;
     mutable PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
@@ -34,7 +35,7 @@ struct Kuhn {
         action_history = state & 0x7FFF;
         nb_plies       = state >> 15;
     }
-    State get_info_set(int player) const {
+    InfoSet get_info_set(int player) const {
         constexpr int32_t mask1 = 0b111111111000111;
         constexpr int32_t mask2 = 0b111111111111000;
         return (nb_plies << 15) | ((player == PLAYER1 ? mask1 : mask2) & action_history); 
@@ -79,16 +80,16 @@ struct Kuhn {
     }
     Action sample_action() const {
         if (nb_plies == 0) {
-            return Action(JACK + reduce(prng.rand<uint32_t>(), 3)); 
+            return Action(JACK + prng.rand<uint32_t>() % 3); 
         } else {
-            return ACTIONS[4 + (get_action(0) - JACK) * 3 + reduce(prng.rand<uint32_t>(), 2)];
+            return ACTIONS[4 + (get_action(0) - JACK) * 3 + prng.rand<uint32_t>() % 2];
         }
     }
-    void actions(ActionList<Action, MAX_NB_ACTIONS>& actions) {
-        Action* action_list = actions.action_list;
+    void actions(List<Action, MAX_NB_ACTIONS>& actions) {
+        Action* action_list = actions.list;
         int start = DELTAS[nb_plies];
-        start += (nb_plies == 1) * ((get_action(nb_plies - 1) - JACK) * 3) + 
-                (nb_plies == 3) * ((get_action(nb_plies - 1) - CHECK) * 3);
+        start += (nb_plies == 1) * ((get_action(0) - JACK) * 3) + 
+                (nb_plies == 3) * ((get_action(2) - CHECK) * 3);
         const Action* moves = ACTIONS + start;
         for (Action a = *moves; a != END; a = *++moves) {
             *action_list++ = a;

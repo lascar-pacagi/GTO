@@ -1,9 +1,7 @@
 #ifndef CFR_H
 #define CFR_H
-
-#include <unordered_map>
-
 #include "game.h"
+#include "game_tree.h"
 #include "action_list.h"
 #include <iostream>
 #include <cstring>
@@ -13,7 +11,6 @@
 
 template<typename Game>
 struct CFR {
-
     struct Node {
         double regrets[Game::MAX_NB_ACTIONS]{};
         double strategies[Game::MAX_NB_ACTIONS]{};
@@ -57,21 +54,20 @@ struct CFR {
                 }
             }
         }
+
     };
-    Node nodes[Game::STATE_SPACE_SIZE]{};
-    Node& get_node(typename Game::State state, int nb_actions) {
-        Node& node = nodes[state];
-        node.nb_actions = nb_actions; 
-        return node;
-    }
-    double cfr(Game& g, int player, double pi_player, double pi_other) {
+    const GameTree<Game>& tree;
+    std::vector<Node> 
+    CFR(const GameTree<Game>& tree) : tree(tree) {
+    }    
+    double cfr(Game& g, double pi1, double pi2, int iter) {
         if (g.game_over()) {
-            return g.payoff(player);
+            return g.payoff(PLAYER1);
         }
         if (g.is_chance_node()) {
             auto action = g.sample_action();
             g.play(action);
-            double v = cfr(g, player, pi_player, pi_other);
+            double v = cfr(g, pi1, pi2, iter);
             g.undo(action);
             return v;
         }
@@ -86,31 +82,27 @@ struct CFR {
         for (int i = 0; i < n.nb_actions; i++) {
             auto a = actions[i];
             g.play(a);
-            if (current_player == player) {
-                utils[i] = cfr(g, player, s[i] * pi_player, pi_other);
+            if (current_player == PLAYER1) {
+                utils[i] = cfr(g, s[i] * pi1, pi2, iter);
             } else {
-                utils[i] = cfr(g, player, pi_player, s[i] * pi_other);
+                utils[i] = cfr(g, pi1, s[i] * pi2, iter);
             }
             g.undo(a);
             u += s[i] * utils[i];
         }
-        if (current_player == player) {
-            for (int i = 0; i < n.nb_actions; i++) {
-                n.regrets[i] += pi_other * (utils[i] - u);
-                n.strategies[i] += pi_player * s[i];
-            }
-        }                
+        for (int i = 0; i < n.nb_actions; i++) {
+            n.regrets[i] += (current_player == PLAYER1 ? pi2 : pi1) * (utils[i] - u) * (current_player == PLAYER1 ? 1 : -1);
+            if (n.regrets[i] < 0) n.regrets[i] = 0;
+            n.strategies[i] += (current_player == PLAYER1 ? pi1 : pi2) * s[i];
+        }
         return u;
     }
-
     void solve(size_t nb_iterations) {
-        double game_value[2]{};
         Game g;
-        for (size_t i = 0; i < nb_iterations; i++) {
-            for (auto player : { PLAYER1, PLAYER2 }) {
-                g.reset();
-                game_value[player] += cfr(g, player, 1, 1);
-            }            
+        double game_value = 0;
+        for (size_t i = 1; i <= nb_iterations; i++) {
+            g.reset();
+            game_value += cfr(g, 1, 1, i);                        
         }
         for (auto player : { PLAYER1, PLAYER2 }) {
             Node& n = nodes[player];
@@ -120,10 +112,8 @@ struct CFR {
                 std::cout << s[i] << ' ';
             }
             std::cout << '\n';
-        }
-        // std::cout << game_value[PLAYER1] / nb_iterations << '\n';
-        // std::cout << game_value[PLAYER2] / nb_iterations << '\n';
-        std::cout << (game_value[PLAYER1] + game_value[PLAYER2]) / (2 * nb_iterations) << std::endl;
+        }        
+        std::cout << game_value / nb_iterations << std::endl;
     }
 };
 

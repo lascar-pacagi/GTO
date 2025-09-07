@@ -2,7 +2,7 @@
 #define TICTACTOE_H
 #include "game.h"
 #include "misc.h"
-#include "action_list.h"
+#include "list.h"
 #include <iostream>
 
 struct TicTacToe {
@@ -13,8 +13,8 @@ struct TicTacToe {
         SCISSOR = 3,
     };
     using State = uint32_t;
+    using InfoSet = uint32_t;
     static constexpr int MAX_NB_ACTIONS = 3;
-    static constexpr int STATE_SPACE_SIZE = 2;    
     State action_history = 0;
     void reset() {
         action_history = 0;
@@ -25,7 +25,7 @@ struct TicTacToe {
     void set_state(State state) {
         action_history = state;
     }
-    State get_info_set(int player) const {
+    InfoSet get_info_set(int player) const {
         return player;
     }
     void play(Action a) {
@@ -46,14 +46,14 @@ struct TicTacToe {
     bool is_chance_node() const {
         return false;
     }
-    static constexpr float PAYOFFS[] {
+    static constexpr int PAYOFFS[] {
         0, 0, 0, 0, 0, 0, 1, -1, 0, -1, 0, 1, 0, 1, -1, 0,                    
     };
-    float payoff(int player) const {
+    int payoff(int player) const {
         return PAYOFFS[action_history] * (player == PLAYER1 ? 1 : -1);
     }
-    void actions(ActionList<Action, MAX_NB_ACTIONS>& actions) {
-        Action* action_list = actions.action_list;
+    void actions(List<Action, MAX_NB_ACTIONS>& actions) {
+        Action* action_list = actions.list;
         *action_list++ = ROCK;
         *action_list++ = PAPER;
         *action_list++ = SCISSOR;
@@ -75,9 +75,9 @@ struct TicTacToe {
     friend std::ostream& operator<<(std::ostream& os, const TicTacToe::Action& action) {
         static const char* repr[] = {
             "NONE",
-            "ROCK",
-            "PAPER",
-            "SCISSOR",
+            "R",
+            "P",
+            "S",
         };
         os << repr[action];
         return os;
