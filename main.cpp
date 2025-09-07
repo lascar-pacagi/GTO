@@ -7,7 +7,6 @@ using namespace std;
 int main() {
     // constexpr int NB_ITERATIONS = 100000000;
     GameTree<SimplePoker> tree;
-    cout << tree.nb_nodes() << '\n';
     cout << tree << '\n';
     // TicTacToe ttt;
     // for (;;) {

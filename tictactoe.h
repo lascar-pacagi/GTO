@@ -43,7 +43,7 @@ struct TicTacToe {
     bool game_over() const {
         return action_history > 3;
     }    
-    bool is_chance_node() const {
+    bool is_chance_player() const {
         return false;
     }
     static constexpr int PAYOFFS[] {
@@ -58,6 +58,10 @@ struct TicTacToe {
         *action_list++ = PAPER;
         *action_list++ = SCISSOR;
         actions.last = action_list;
+    }
+    void probas(List<int, MAX_NB_ACTIONS>& probas) {
+        int* proba_list = probas.list;
+        probas.last = proba_list;
     }
     friend std::ostream& operator<<(std::ostream& os, const TicTacToe& ttt) {
         auto h = ttt.action_history;

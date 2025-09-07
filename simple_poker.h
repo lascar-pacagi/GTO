@@ -18,8 +18,6 @@ struct SimplePoker {
     };
     using State = uint32_t;
     using InfoSet = uint32_t;
-    using Proba = uint8_t;
-
     static constexpr int MAX_NB_ACTIONS = 3;    
     uint32_t action_history = 0;
     int nb_plies = 0;
@@ -81,15 +79,15 @@ struct SimplePoker {
         }
         actions.last = action_list;
     }
-    bool is_chance_node() const {
+    bool is_chance_player() const {
         return nb_plies < 2;
     }
-    void probabilities(List<Proba, MAX_NB_ACTIONS>& probas) {
-        uint8_t* proba_list = probas.list;
+    void probas(List<int, MAX_NB_ACTIONS>& probas) {
+        int* proba_list = probas.list;
         if (nb_plies < 2) {    
             *proba_list++ = 25;
             *proba_list++ = 25;
-            *proba_list++ = 50;        
+            *proba_list++ = 50;
         }
         probas.last = proba_list;
     }

@@ -57,7 +57,7 @@ struct Kuhn {
     bool game_over() const {
         return nb_plies == 5 || (nb_plies == 4 && get_action(nb_plies - 1) != BET);
     }    
-    bool is_chance_node() const {
+    bool is_chance_player() const {
         return nb_plies < 2;
     }    
     static constexpr Action ACTIONS[] {
