@@ -14,7 +14,9 @@ struct TicTacToe {
     };
     using State = uint32_t;
     using InfoSet = uint32_t;
-    static constexpr int MAX_NB_ACTIONS = 3;
+    static constexpr int MAX_NB_PLAYER_ACTIONS = 3;
+    static constexpr int MAX_NB_CHANCE_ACTIONS = 0;  
+    static constexpr int MAX_NB_ACTIONS = std::max(MAX_NB_PLAYER_ACTIONS, MAX_NB_CHANCE_ACTIONS);    
     State action_history = 0;
     void reset() {
         action_history = 0;
@@ -52,14 +54,15 @@ struct TicTacToe {
     int payoff(int player) const {
         return PAYOFFS[action_history] * (player == PLAYER1 ? 1 : -1);
     }
-    void actions(List<Action, MAX_NB_ACTIONS>& actions) {
+    template<int SIZE>
+    void actions(List<Action, SIZE>& actions) {
         Action* action_list = actions.list;
         *action_list++ = ROCK;
         *action_list++ = PAPER;
         *action_list++ = SCISSOR;
         actions.last = action_list;
     }
-    void probas(List<int, MAX_NB_ACTIONS>& probas) {
+    void probas(List<int, MAX_NB_CHANCE_ACTIONS>& probas) {
         int* proba_list = probas.list;
         probas.last = proba_list;
     }

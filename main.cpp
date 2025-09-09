@@ -1,13 +1,17 @@
 #include "tictactoe.h"
 #include "simple_poker.h"
+#include "Kuhn.h"
 #include "game_tree.h"
+#include "cfr.h"
 #include <bits/stdc++.h>
 using namespace std;
 
 int main() {
     // constexpr int NB_ITERATIONS = 100000000;
-    GameTree<SimplePoker> tree;
+    GameTree<TicTacToe> tree;
     cout << tree << '\n';
+    CFR<TicTacToe> cfr(tree);
+    cfr.solve(10000000);
     // TicTacToe ttt;
     // for (;;) {
     //     ttt.reset();
@@ -149,4 +153,128 @@ int main() {
     //     k.nb_actions = nb_actions;
     //     cout << k << '\n';
     // }
+    /*
+    131126 [HHHHkk] 0
+    176694 [HHHHkbf] -1
+    172598 [HHHHkbc] 0
+    132726 [HHHHbf] 1
+    132214 [HHHHbc] 0
+    131118 [HHLLkk] 1
+    176686 [HHLLkbf] -1
+    172590 [HHLLkbc] 3
+    132718 [HHLLbf] 1
+    132206 [HHLLbc] 3
+    131110 [HHHLkk] 1
+    176678 [HHHLkbf] -1
+    172582 [HHHLkbc] 3
+    132710 [HHHLbf] 1
+    132198 [HHHLbc] 3
+    131125 [LLHHkk] -1
+    176693 [LLHHkbf] -1
+    172597 [LLHHkbc] -3
+    132725 [LLHHbf] 1
+    132213 [LLHHbc] -3
+    131117 [LLLLkk] 0
+    176685 [LLLLkbf] -1
+    172589 [LLLLkbc] 0
+    132717 [LLLLbf] 1
+    132205 [LLLLbc] 0
+    131109 [LLHLkk] 1
+    176677 [LLHLkbf] -1
+    172581 [LLHLkbc] 3
+    132709 [LLHLbf] 1
+    132197 [LLHLbc] 3
+    131124 [HLHHkk] -1
+    176692 [HLHHkbf] -1
+    172596 [HLHHkbc] -3
+    132724 [HLHHbf] 1
+    132212 [HLHHbc] -3
+    131116 [HLLLkk] -1
+    176684 [HLLLkbf] -1
+    172588 [HLLLkbc] -3
+    132716 [HLLLbf] 1
+    132204 [HLLLbc] -3
+    131108 [HLHLkk] 0
+    176676 [HLHLkbf] -1
+    172580 [HLHLkbc] 0
+    132708 [HLHLbf] 1
+    132196 [HLHLbc] 0
+    */
+    /*
+    cout << "search for magic\n";
+    PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
+    int n = 5;
+    //uint32_t mask = (1 << n) - 1;
+    map<uint32_t, int> payoffs{
+        {54, 0},
+        {12854, -1},
+        {8758, 0},
+        {1654, 1},
+        {1142, 0},
+        {46, 1},
+        {12846, -1},
+        {8750, 3},
+        {1646, 1},
+        {1134, 3},
+        {38, 1},
+        {12838, -1},
+        {8742, 3},
+        {1638, 1},
+        {1126, 3},
+        {53, -1},
+        {12853, -1},
+        {8757, -3},
+        {1653, 1},
+        {1141, -3},
+        {45, 0},
+        {12845, -1},
+        {8749, 0},
+        {1645, 1},
+        {1133, 0},
+        {37, 1},
+        {12837, -1},
+        {8741, 3},
+        {1637, 1},
+        {1125, 3},
+        {52, -1},
+        {12852, -1},
+        {8756, -3},
+        {1652, 1},
+        {1140, -3},
+        {44, -1},
+        {12844, -1},
+        {8748, -3},
+        {1644, 1},
+        {1132, -3},
+        {36, 0},
+        {12836, -1},
+        {8740, 0},
+        {1636, 1},
+        {1124, 0},
+    };    
+    for (;;) {
+        uint32_t magic = prng.rand<uint32_t>();
+        map<uint32_t, int> seen;
+        bool ok = true;
+        for (const auto [state, payoff] : payoffs) {
+            uint32_t key = state * magic >> (32 - n);
+            if (seen.count(key) == 0) {
+                seen[key] = payoff;
+            } else {
+                int v = seen[key];
+                if (v != payoff) {
+                    ok = false;
+                    break;
+                }
+            }
+        }
+        if (ok) {
+            cout << "found magic!: " << magic << " for n = " << n << endl;            
+            for (const auto [key, v] : seen) {
+                cout << key << ',' << v << '\n';
+            }
+            break;
+        }
+    }
+    */   
 }

@@ -2,7 +2,7 @@
 #define KUHN_H
 
 #include "game.h"
-#include "action_list.h"
+#include "list.h"
 #include "misc.h"
 #include <chrono>
 #include <iostream>
@@ -20,7 +20,9 @@ struct Kuhn {
     };
     using State = uint32_t;
     using InfoSet = uint32_t;
-    static constexpr int MAX_NB_ACTIONS = 3;
+    static constexpr int MAX_NB_PLAYER_ACTIONS = 2;
+    static constexpr int MAX_NB_CHANCE_ACTIONS = 3;  
+    static constexpr int MAX_NB_ACTIONS = std::max(MAX_NB_PLAYER_ACTIONS, MAX_NB_CHANCE_ACTIONS);    
     uint32_t action_history = 0;
     int nb_plies = 0;
     mutable PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
@@ -74,7 +76,7 @@ struct Kuhn {
         0, -2, -1, -1, 0, -1, -1, 0, 0, 0, 0, 0, -1, 1, 0, 2, -1, 1, 0, 2, 0, 0, 0, 2, 1, 0, -2, 1, 1, -2, -2
     };
     int payoff(int player) const {
-        constexpr uint32_t magic = 3816247202;
+        constexpr uint32_t magic = 3816247202u;
         constexpr int n = 27;   
         return PAYOFFS[action_history * magic >> n] * (player == PLAYER1 ? 1 : -1);
     }
@@ -85,7 +87,8 @@ struct Kuhn {
             return ACTIONS[4 + (get_action(0) - JACK) * 3 + prng.rand<uint32_t>() % 2];
         }
     }
-    void actions(List<Action, MAX_NB_ACTIONS>& actions) {
+    template<int SIZE>
+    void actions(List<Action, SIZE>& actions) {
         Action* action_list = actions.list;
         int start = DELTAS[nb_plies];
         start += (nb_plies == 1) * ((get_action(0) - JACK) * 3) + 
@@ -95,6 +98,18 @@ struct Kuhn {
             *action_list++ = a;
         }
         actions.last = action_list;
+    }
+    void probas(List<int, MAX_NB_CHANCE_ACTIONS>& probas) {
+        int* proba_list = probas.list;
+        if (nb_plies == 0) {    
+            *proba_list++ = 33;
+            *proba_list++ = 33;
+            *proba_list++ = 33;
+        } else if (nb_plies == 1) {
+            *proba_list++ = 50;
+            *proba_list++ = 50;
+        }
+        probas.last = proba_list;
     }
     friend std::ostream& operator<<(std::ostream& os, const Kuhn& kuhn) {
         auto h = kuhn.action_history;
@@ -106,13 +121,13 @@ struct Kuhn {
     }
     friend std::ostream& operator<<(std::ostream& os, const Kuhn::Action& action) {
         static const char* repr[] = {
-            "CHECK",
-            "BET",
-            "CALL",
-            "FOLD",
-            "JACK",
-            "QUEEN",
-            "KING",
+            "k",
+            "b",
+            "c",
+            "f",
+            "J",
+            "Q",
+            "K",
             "END",
         };
         os << repr[action];

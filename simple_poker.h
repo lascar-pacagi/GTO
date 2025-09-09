@@ -4,6 +4,7 @@
 #include "game.h"
 #include "misc.h"
 #include "list.h"
+#include <cmath>
 
 struct SimplePoker {
     enum Action {
@@ -18,7 +19,9 @@ struct SimplePoker {
     };
     using State = uint32_t;
     using InfoSet = uint32_t;
-    static constexpr int MAX_NB_ACTIONS = 3;    
+    static constexpr int MAX_NB_PLAYER_ACTIONS = 2;
+    static constexpr int MAX_NB_CHANCE_ACTIONS = 3;  
+    static constexpr int MAX_NB_ACTIONS = std::max(MAX_NB_PLAYER_ACTIONS, MAX_NB_CHANCE_ACTIONS);    
     uint32_t action_history = 0;
     int nb_plies = 0;
     mutable PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
@@ -39,10 +42,12 @@ struct SimplePoker {
         return (nb_plies << 15) | ((player == PLAYER1 ? mask1 : mask2) & action_history); 
     }
     static constexpr int PAYOFFS[] {
-        0,
+        0, 0, 0, -1, 0, 3, -1, 1, -3, 0, -1, 1, 0, 0, 1, 0, 0, -1, -1, 3, -1, 0, 0, 0, -1, 1, -3, -1, 1, 1,
     };
     int payoff(int player) const {
-        return 0;
+        constexpr uint32_t magic = 1909500917u;
+        constexpr int n = 27;   
+        return PAYOFFS[action_history * magic >> n] * (player == PLAYER1 ? 1 : -1);
     }
     void play(Action a) {
         action_history |= static_cast<uint32_t>(a) << nb_plies * 3;
@@ -69,7 +74,8 @@ struct SimplePoker {
     static constexpr int DELTAS[] {
         0, 0, 4, 4, 7,
     };
-    void actions(List<Action, MAX_NB_ACTIONS>& actions) {
+    template<int SIZE>
+    void actions(List<Action, SIZE>& actions) {
         Action* action_list = actions.list;
         int start = DELTAS[nb_plies];
         start += (nb_plies == 3) * (get_action(2) == BET) * 3;       
@@ -82,7 +88,7 @@ struct SimplePoker {
     bool is_chance_player() const {
         return nb_plies < 2;
     }
-    void probas(List<int, MAX_NB_ACTIONS>& probas) {
+    void probas(List<int, MAX_NB_CHANCE_ACTIONS>& probas) {
         int* proba_list = probas.list;
         if (nb_plies < 2) {    
             *proba_list++ = 25;

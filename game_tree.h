@@ -35,16 +35,17 @@ struct GameTree {
         if (game.game_over()) {
             nb_children.push_back(0);
             children.push_back(game.payoff(PLAYER1));
+            //std::cout << game.action_history << ' ' << game << ' ' << game.payoff(PLAYER1) << '\n'; 
             actions.push_back(Action{});
             return root;
         }
         if (game.is_chance_player()) {
-            List<Action, Game::MAX_NB_ACTIONS> action_list;
+            List<Action, Game::MAX_NB_CHANCE_ACTIONS> action_list;
             game.actions(action_list);
-            List<int, Game::MAX_NB_ACTIONS> proba_list;
+            List<int, Game::MAX_NB_CHANCE_ACTIONS> proba_list;
             game.probas(proba_list);
             int n = static_cast<int>(action_list.size());
-            nb_children.push_back(-n);
+            nb_children.push_back((n << 2) + CHANCE);
             actions.insert(actions.end(), action_list.begin(), action_list.end());
             actions.insert(actions.end(), n, Action{});
             int children_and_proba_index = static_cast<int>(children.size());
@@ -58,9 +59,9 @@ struct GameTree {
                 children[children_and_proba_index++] = proba_list[i];                
             }
         } else {
-            List<Action, Game::MAX_NB_ACTIONS> action_list;
+            List<Action, Game::MAX_NB_PLAYER_ACTIONS> action_list;
             game.actions(action_list);
-            nb_children.push_back(static_cast<int>(action_list.size()));                    
+            nb_children.push_back((static_cast<int>(action_list.size()) << 2) + game.current_player());                    
             actions.insert(actions.end(), action_list.begin(), action_list.end());
             int children_index = static_cast<int>(children.size());
             children.insert(children.end(), action_list.size(), 0);
@@ -68,9 +69,9 @@ struct GameTree {
                 game.play(a);
                 int idx = build_tree(game);
                 game.undo(a);
-                children[children_index++] = idx;    
+                children[children_index++] = idx;
             }
-        }        
+        }
         return root;
     }
 
@@ -95,7 +96,8 @@ namespace {
     }
     template<typename Game>
     void print_tree(std::ostream& os, const GameTree<Game>& tree, int idx = 0, int proba = -1, const std::string& prev_action = "", const std::string& prefix = "") {
-        int n = tree.nb_children[idx];
+        int n = tree.nb_children[idx] >> 2;
+        int player = tree.nb_children[idx] & 3;
         //std::cout << "#### " << idx << '\n';
         int start = tree.start_children_and_actions[idx];
         //std::cout << "@@@@ " << start << '\n';
@@ -110,26 +112,25 @@ namespace {
             os << p << ' ';
         }
         os << prev_action;
-        std::string p = prefix + repeat(" ", w + 1);             
-        int n1 = std::abs(n);
-        if (n1 == 1) {
+        std::string p = prefix + repeat(" ", w + 1);
+        if (n == 1) {
             os << "---";
-            print_tree(os, tree, tree.children[start], (n < 0 ? tree.children[start + 1] : -1), convert(tree.actions[start]), p + "  ");
+            print_tree(os, tree, tree.children[start], (player == CHANCE ? tree.children[start + 1] : -1), convert(tree.actions[start]), p + "  ");
         } else {
             os << "-+-";
-            print_tree(os, tree, tree.children[start], (n < 0 ? tree.children[start + 1] : -1), convert(tree.actions[start]), p + "| ");
+            print_tree(os, tree, tree.children[start], (player == CHANCE ? tree.children[start + 1] : -1), convert(tree.actions[start]), p + "| ");
             os << '\n';
             os << p;
-            for (int i = 1; i < n1 - 1; i++) {
+            for (int i = 1; i < n - 1; i++) {
                 os << "|-";
-                print_tree(os, tree, (n < 0 ? tree.children[start + 2 * i] : tree.children[start + i]), 
-                            (n < 0 ? tree.children[start + 2 * i + 1] : -1), convert(tree.actions[start + i]), p + "| ");
+                print_tree(os, tree, (player == CHANCE ? tree.children[start + 2 * i] : tree.children[start + i]), 
+                            (player == CHANCE ? tree.children[start + 2 * i + 1] : -1), convert(tree.actions[start + i]), p + "| ");
                 os << '\n';
                 os << p;
             }
             os << "`-";
-            print_tree(os, tree, (n < 0 ? tree.children[start + 2 * n1 - 2] : tree.children[start + n1 - 1]), 
-                        (n < 0 ? tree.children[start + 2 * n1 - 1] : -1), convert(tree.actions[start + n1 - 1]), p + "  ");
+            print_tree(os, tree, (player == CHANCE ? tree.children[start + 2 * n - 2] : tree.children[start + n - 1]), 
+                        (player == CHANCE ? tree.children[start + 2 * n - 1] : -1), convert(tree.actions[start + n - 1]), p + "  ");
         }
     }
 }
