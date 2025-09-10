@@ -13,7 +13,7 @@ struct TicTacToe {
         SCISSOR = 3,
     };
     using State = uint32_t;
-    using InfoSet = uint32_t;
+    enum InfoSet : int {};
     static constexpr int MAX_NB_PLAYER_ACTIONS = 3;
     static constexpr int MAX_NB_CHANCE_ACTIONS = 0;  
     static constexpr int MAX_NB_ACTIONS = std::max(MAX_NB_PLAYER_ACTIONS, MAX_NB_CHANCE_ACTIONS);    
@@ -28,7 +28,7 @@ struct TicTacToe {
         action_history = state;
     }
     InfoSet get_info_set(int player) const {
-        return player;
+        return InfoSet(player);
     }
     void play(Action a) {
         action_history |= static_cast<uint32_t>(a) << current_player() * 2;
@@ -87,6 +87,14 @@ struct TicTacToe {
             "S",
         };
         os << repr[action];
+        return os;
+    }
+    friend std::ostream& operator<<(std::ostream& os, const TicTacToe::InfoSet& info_set) {
+        static const char* repr[] = {
+            "Player 1",
+            "Player 2",
+        };
+        os << repr[info_set];
         return os;
     }
 };

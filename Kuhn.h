@@ -19,7 +19,7 @@ struct Kuhn {
         END   = 7,
     };
     using State = uint32_t;
-    using InfoSet = uint32_t;
+    enum InfoSet : uint32_t {};
     static constexpr int MAX_NB_PLAYER_ACTIONS = 2;
     static constexpr int MAX_NB_CHANCE_ACTIONS = 3;  
     static constexpr int MAX_NB_ACTIONS = std::max(MAX_NB_PLAYER_ACTIONS, MAX_NB_CHANCE_ACTIONS);    
@@ -40,7 +40,7 @@ struct Kuhn {
     InfoSet get_info_set(int player) const {
         constexpr int32_t mask1 = 0b111111111000111;
         constexpr int32_t mask2 = 0b111111111111000;
-        return (nb_plies << 15) | ((player == PLAYER1 ? mask1 : mask2) & action_history); 
+        return InfoSet((nb_plies << 15) | ((player == PLAYER1 ? mask1 : mask2) & action_history)); 
     }
     void play(Action a) {
         action_history |= uint32_t(a) << nb_plies * 3;
@@ -114,7 +114,7 @@ struct Kuhn {
     friend std::ostream& operator<<(std::ostream& os, const Kuhn& kuhn) {
         auto h = kuhn.action_history;
         for (int i = 0; i < kuhn.nb_plies; i++) {
-            os << Action(h & 0x7) << ' ';
+            os << Action(h & 7) << ' ';
             h >>= 3;
         }
         return os;
@@ -131,6 +131,23 @@ struct Kuhn {
             "END",
         };
         os << repr[action];
+        return os;
+    }
+    friend std::ostream& operator<<(std::ostream& os, const Kuhn::InfoSet& info_set) {
+        uint32_t i = info_set;
+        int nb_plies = i >> 15;        
+        if ((i & 7) != 0) {
+            os << Action(i & 7);
+            i >>= 3;
+        } else {
+            i >>= 3;
+            os << Action(i & 7);
+        }
+        os << ' ';        
+        for (int j = 0; j < nb_plies - 2; j++) {            
+            i >>= 3;
+            os << Action(i & 7);
+        }
         return os;
     }
 };

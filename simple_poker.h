@@ -18,7 +18,7 @@ struct SimplePoker {
         END   = 7,
     };
     using State = uint32_t;
-    using InfoSet = uint32_t;
+    enum InfoSet : uint32_t {};
     static constexpr int MAX_NB_PLAYER_ACTIONS = 2;
     static constexpr int MAX_NB_CHANCE_ACTIONS = 3;  
     static constexpr int MAX_NB_ACTIONS = std::max(MAX_NB_PLAYER_ACTIONS, MAX_NB_CHANCE_ACTIONS);    
@@ -39,7 +39,7 @@ struct SimplePoker {
     InfoSet get_info_set(int player) const {
         constexpr int32_t mask1 = 0b111111111000111;
         constexpr int32_t mask2 = 0b111111111111000;
-        return (nb_plies << 15) | ((player == PLAYER1 ? mask1 : mask2) & action_history); 
+        return InfoSet((nb_plies << 15) | ((player == PLAYER1 ? mask1 : mask2) & action_history)); 
     }
     static constexpr int PAYOFFS[] {
         0, 0, 0, -1, 0, 3, -1, 1, -3, 0, -1, 1, 0, 0, 1, 0, 0, -1, -1, 3, -1, 0, 0, 0, -1, 1, -3, -1, 1, 1,
@@ -126,6 +126,23 @@ struct SimplePoker {
             "HH"
         };
         os << repr[action];
+        return os;
+    }
+    friend std::ostream& operator<<(std::ostream& os, const SimplePoker::InfoSet& info_set) {
+        uint32_t i = info_set;
+        int nb_plies = i >> 15;        
+        if ((i & 7) != 0) {
+            os << Action(i & 7);
+            i >>= 3;
+        } else {
+            i >>= 3;
+            os << Action(i & 7);
+        }
+        os << ' ';        
+        for (int j = 0; j < nb_plies - 2; j++) {            
+            i >>= 3;
+            os << Action(i & 7);
+        }
         return os;
     }
 };

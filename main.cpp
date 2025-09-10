@@ -3,15 +3,19 @@
 #include "Kuhn.h"
 #include "game_tree.h"
 #include "cfr.h"
+#include "strategy.h"
 #include <bits/stdc++.h>
 using namespace std;
 
 int main() {
     // constexpr int NB_ITERATIONS = 100000000;
-    GameTree<TicTacToe> tree;
+    using Game = Kuhn;
+    GameTree<Game> tree;
     cout << tree << '\n';
-    CFR<TicTacToe> cfr(tree);
+    CFR<Game> cfr(tree);
     cfr.solve(10000000);
+    Strategy<Game> strategy = cfr.get_strategy();
+    cout << strategy << '\n';
     // TicTacToe ttt;
     // for (;;) {
     //     ttt.reset();
