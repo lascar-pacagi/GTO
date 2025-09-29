@@ -38,9 +38,8 @@ struct Kuhn {
         nb_plies       = state >> 15;
     }
     InfoSet get_info_set(int player) const {
-        constexpr int32_t mask1 = 0b111111111000111;
-        constexpr int32_t mask2 = 0b111111111111000;
-        return InfoSet((nb_plies << 15) | ((player == PLAYER1 ? mask1 : mask2) & action_history)); 
+        constexpr uint32_t masks[] = { 0b111111111000111U, 0b111111111111000U, 0b111111111111111U };        
+        return InfoSet((nb_plies << 15) | (masks[player] & action_history)); 
     }
     void play(Action a) {
         action_history |= uint32_t(a) << nb_plies * 3;
@@ -72,7 +71,7 @@ struct Kuhn {
     static constexpr int DELTAS[] {
         0, 4, 13, 16, 22,
     };
-    static constexpr int PAYOFFS[] {
+    static constexpr int8_t PAYOFFS[] {
         0, -2, -1, -1, 0, -1, -1, 0, 0, 0, 0, 0, -1, 1, 0, 2, -1, 1, 0, 2, 0, 0, 0, 2, 1, 0, -2, 1, 1, -2, -2
     };
     int payoff(int player) const {

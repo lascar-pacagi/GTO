@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 #include <cmath>
+#include <map>
 
 template<typename Game>
 struct GameTree {
@@ -12,6 +13,8 @@ struct GameTree {
     using InfoSet = Game::InfoSet;
     using Action  = Game::Action;
 
+    std::map<InfoSet, std::vector<State>> info_set_to_states;
+    std::map<State, int> state_to_idx;
     std::vector<InfoSet> info_sets;
     std::vector<Action>  actions;
     std::vector<int> nb_children;
@@ -27,15 +30,17 @@ struct GameTree {
         start_children_and_actions.shrink_to_fit();
         children.shrink_to_fit();
     }
-
     int build_tree(Game& game) {
         int root = static_cast<int>(info_sets.size());
-        info_sets.push_back(game.get_info_set(game.current_player()));
+        InfoSet info_set = game.get_info_set(game.current_player());
+        state_to_idx[game.get_state()] = root;
+        info_sets.push_back(info_set);
         start_children_and_actions.push_back(static_cast<int>(children.size()));
         if (game.game_over()) {
             nb_children.push_back(0);
             children.push_back(game.payoff(PLAYER1));
-            //std::cout << game.action_history << ' ' << game << ' ' << game.payoff(PLAYER1) << '\n'; 
+            //std::cout << game.action_history << ':' << game.payoff(PLAYER1) << ',';
+            //std::cout << '{' << game.action_history << ',' << game.payoff(PLAYER1) << "},"; 
             actions.push_back(Action{});
             return root;
         }
@@ -59,6 +64,7 @@ struct GameTree {
                 children[children_and_proba_index++] = proba_list[i];                
             }
         } else {
+            info_set_to_states[info_set].push_back(game.get_state());        
             List<Action, Game::MAX_NB_PLAYER_ACTIONS> action_list;
             game.actions(action_list);
             nb_children.push_back((static_cast<int>(action_list.size()) << 2) + game.current_player());                    
@@ -77,6 +83,14 @@ struct GameTree {
 
     size_t nb_nodes() const {
         return info_sets.size();
+    }
+
+    int get_state_idx(const State& state) const {
+        return state_to_idx.at(state);
+    }
+
+    const std::vector<State>& get_states(const InfoSet& info_set) const {
+        return info_set_to_states.at(info_set);
     }
 };
 
@@ -100,19 +114,23 @@ namespace {
         int player = tree.nb_children[idx] & 3;
         //std::cout << "#### " << idx << '\n';
         int start = tree.start_children_and_actions[idx];
-        //std::cout << "@@@@ " << start << '\n';
+        //std::cout << "@@@@ " << start << '\n';        
         if (n == 0) {
             os << prev_action << " (" << tree.children[start] << ')'; 
             return;
         }        
-        size_t w = prev_action.size();
+        // if (player == PLAYER1) std::cout << "PLAYER1" << ' ';
+        // if (player == PLAYER2) std::cout << "PLAYER2" << ' ';
+        // if (player == CHANCE) std::cout << "CHANCE" << ' ';
+        //os << tree.info_sets[idx] << ' ';
+        size_t w = prev_action.size() + 2;
         if (proba > -1) {
             std::string p = std::to_string(proba);
             w += p.size() + 1;
             os << p << ' ';
         }
-        os << prev_action;
-        std::string p = prefix + repeat(" ", w + 1);
+        os << prev_action << ' ';
+        std::string p = prefix + repeat(" ", w);
         if (n == 1) {
             os << "---";
             print_tree(os, tree, tree.children[start], (player == CHANCE ? tree.children[start + 1] : -1), convert(tree.actions[start]), p + "  ");

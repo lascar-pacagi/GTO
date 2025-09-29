@@ -5,10 +5,11 @@
 #include <chrono>
 #include "list.h"
 #include <map>
+#include <iostream>
 
 template<typename Game, typename T = double>
 struct Strategy {
-    mutable std::mt19937_64 mt{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
+    static thread_local inline std::mt19937_64 mt{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
     using InfoSet = Game::InfoSet;
     using Action  = Game::Action;
     std::map<InfoSet, int> info_set_to_idx;
@@ -17,8 +18,14 @@ struct Strategy {
     std::vector<T> strategies;
 
     Action get_action(InfoSet info_set) const {
-        int idx = info_set_to_idx[info_set];
-        int n = info_set_to_nb_actions[info_set];
+        //std::cout << "info set " << info_set << '\n';
+        int idx = info_set_to_idx.at(info_set);
+        int n = info_set_to_nb_actions.at(info_set);
+        // std::cout << "actions: " << n << "\n";
+        // for (int i = 0; i < n; i++) {
+        //     std::cout << actions[idx + i] << ' ';
+        // }
+        // std::cout << '\n';
         std::uniform_real_distribution<T> d(0, 1);
         T r = d(mt);
         T sum{};
@@ -27,6 +34,14 @@ struct Strategy {
             if (r < sum) return actions[idx + i];
         }
         return actions[idx + n - 1];
+    }
+    const T* get_strategy(const InfoSet& info_set) const {
+        int idx = info_set_to_idx.at(info_set);
+        return &strategies[idx];
+    }
+    const Action* get_actions(const InfoSet& info_set) const {
+        int idx = info_set_to_idx.at(info_set);
+        return &actions[idx];
     }
 };
 

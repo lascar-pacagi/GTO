@@ -4,6 +4,8 @@
 #include "misc.h"
 #include "list.h"
 #include <iostream>
+#include <vector>
+#include <utility>
 
 struct TicTacToe {
     enum Action {
@@ -20,6 +22,17 @@ struct TicTacToe {
     State action_history = 0;
     void reset() {
         action_history = 0;
+    }
+    static std::vector<std::pair<InfoSet, Action>> info_sets_and_actions(State state, int player) {
+        std::vector<std::pair<InfoSet, Action>> res;
+        if (player == PLAYER1 && state != 0) {
+            res.emplace_back(InfoSet(player), Action(state & 3));
+        }
+        return res;
+    }
+    template<typename T = double>
+    static T chance_reach_proba(State state) {
+        return static_cast<T>(1.0);
     }
     State get_state() const {
         return action_history;
@@ -48,7 +61,7 @@ struct TicTacToe {
     bool is_chance_player() const {
         return false;
     }
-    static constexpr int PAYOFFS[] {
+    static constexpr int8_t PAYOFFS[] {
         0, 0, 0, 0, 0, 0, 1, -1, 0, -1, 0, 1, 0, 1, -1, 0,                    
     };
     int payoff(int player) const {

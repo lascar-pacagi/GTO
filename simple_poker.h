@@ -29,6 +29,37 @@ struct SimplePoker {
         action_history = 0;
         nb_plies = 0;
     }
+    static std::vector<std::pair<InfoSet, Action>> info_sets_and_actions(State state, int player) {
+        int nb_plies = state >> 15;
+        std::vector<std::pair<InfoSet, Action>> res;
+        // std::cout << "player: " << player << '\n';
+        // std::cout << "nb plies: " << nb_plies << '\n';
+        // std::cout << "state: ";
+        // uint32_t x = state & 0x7FFF;
+        // for (int i = 0; i < nb_plies; i++) {
+        //     std::cout << Action(x & 7) << ' ';
+        //     x >>= 3;
+        // }
+        // std::cout << '\n';
+        if (player == PLAYER1) {
+            if (nb_plies >= 3) res.emplace_back(InfoSet((2 << 15) | (state & 0b111U)), Action((state >> 6) & 7));
+            if (nb_plies >= 5) res.emplace_back(InfoSet((4 << 15) | (state & 0b111'111'000'111U)), Action((state >> 12) & 7));
+        } else {
+            if (nb_plies >= 4) res.emplace_back(InfoSet((3 << 15) | (state & 0b111'111'000U)), Action((state >> 9) & 7));
+        };
+        // for (const auto& [i, a] : res) {
+        //     std::cout << "(" << i << ',' << a << ")";
+        // }
+        // std::cout << '\n';
+        return res;
+    }
+    template<typename T = double>
+    static T chance_reach_proba(State state) {
+        static constexpr T probas[] = { T(1.0), T(1.0), T(1.0), T(1.0), T(0.5), T(0.25), T(0.25) };
+        auto hand1 = state & 7;
+        auto hand2 = (state >> 3) & 7;
+        return static_cast<T>(probas[hand1] * probas[hand2]);
+    }
     State get_state() const {
         return nb_plies << 15 | action_history;
     }
@@ -37,11 +68,10 @@ struct SimplePoker {
         nb_plies       = state >> 15;
     }
     InfoSet get_info_set(int player) const {
-        constexpr int32_t mask1 = 0b111111111000111;
-        constexpr int32_t mask2 = 0b111111111111000;
-        return InfoSet((nb_plies << 15) | ((player == PLAYER1 ? mask1 : mask2) & action_history)); 
+        constexpr uint32_t masks[] = { 0b111111111000111U, 0b111111111111000U, 0b111111111111111U };
+        return InfoSet((nb_plies << 15) | (masks[player] & action_history)); 
     }
-    static constexpr int PAYOFFS[] {
+    static constexpr int8_t PAYOFFS[] {
         0, 0, 0, -1, 0, 3, -1, 1, -3, 0, -1, 1, 0, 0, 1, 0, 0, -1, -1, 3, -1, 0, 0, 0, -1, 1, -3, -1, 1, 1,
     };
     int payoff(int player) const {
@@ -130,7 +160,8 @@ struct SimplePoker {
     }
     friend std::ostream& operator<<(std::ostream& os, const SimplePoker::InfoSet& info_set) {
         uint32_t i = info_set;
-        int nb_plies = i >> 15;        
+        int nb_plies = i >> 15; 
+        os << nb_plies << ' ';       
         if ((i & 7) != 0) {
             os << Action(i & 7);
             i >>= 3;
