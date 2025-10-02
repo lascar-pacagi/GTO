@@ -30,6 +30,25 @@ struct Kuhn {
         action_history = 0;
         nb_plies = 0;
     }
+    static std::vector<std::pair<InfoSet, Action>> info_sets_and_actions(State state, int player) {
+        int nb_plies = state >> 15;
+        std::vector<std::pair<InfoSet, Action>> res;
+        if (player == PLAYER1) {
+            if (nb_plies >= 3) res.emplace_back(InfoSet((2 << 15) | (state & 0b111U)), Action((state >> 6) & 7));
+            if (nb_plies >= 5) res.emplace_back(InfoSet((4 << 15) | (state & 0b111'111'000'111U)), Action((state >> 12) & 7));
+        } else {
+            if (nb_plies >= 4) res.emplace_back(InfoSet((3 << 15) | (state & 0b111'111'000U)), Action((state >> 9) & 7));
+        };
+        return res;
+    }
+    template<typename T = double>
+    static T chance_reach_proba(State state) {
+        static constexpr T probas1[] = { T(1.0), T(1.0), T(1.0), T(1.0), T(1.0 / 3.0), T(1.0 / 3.0), T(1.0 / 3.0) };
+        static constexpr T probas2[] = { T(1.0), T(1.0), T(1.0), T(1.0), T(0.5), T(0.5), T(0.5) };
+        auto hand1 = state & 7;
+        auto hand2 = (state >> 3) & 7;
+        return probas1[hand1] * probas2[hand2];
+    }
     State get_state() const {
         return nb_plies << 15 | action_history;
     }

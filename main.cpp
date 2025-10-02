@@ -15,11 +15,11 @@ using namespace std;
 
 int main() {
     std::cout << "Threads available (omp_get_num_procs): " << omp_get_num_procs() << '\n';
-    using Game = SimplePoker;
+    using Game = Leduc;
     GameTree<Game> tree;
     cout << tree << '\n';
     CFR<Game> cfr(tree);
-    cfr.solve(10000000);
+    cfr.solve(1000000);
     Strategy<Game> strategy = cfr.get_strategy();
     cout << '\n' << strategy << '\n';
     evaluate(tree, strategy, strategy);

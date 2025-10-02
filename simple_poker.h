@@ -32,25 +32,12 @@ struct SimplePoker {
     static std::vector<std::pair<InfoSet, Action>> info_sets_and_actions(State state, int player) {
         int nb_plies = state >> 15;
         std::vector<std::pair<InfoSet, Action>> res;
-        // std::cout << "player: " << player << '\n';
-        // std::cout << "nb plies: " << nb_plies << '\n';
-        // std::cout << "state: ";
-        // uint32_t x = state & 0x7FFF;
-        // for (int i = 0; i < nb_plies; i++) {
-        //     std::cout << Action(x & 7) << ' ';
-        //     x >>= 3;
-        // }
-        // std::cout << '\n';
         if (player == PLAYER1) {
             if (nb_plies >= 3) res.emplace_back(InfoSet((2 << 15) | (state & 0b111U)), Action((state >> 6) & 7));
             if (nb_plies >= 5) res.emplace_back(InfoSet((4 << 15) | (state & 0b111'111'000'111U)), Action((state >> 12) & 7));
         } else {
             if (nb_plies >= 4) res.emplace_back(InfoSet((3 << 15) | (state & 0b111'111'000U)), Action((state >> 9) & 7));
         };
-        // for (const auto& [i, a] : res) {
-        //     std::cout << "(" << i << ',' << a << ")";
-        // }
-        // std::cout << '\n';
         return res;
     }
     template<typename T = double>
@@ -58,7 +45,7 @@ struct SimplePoker {
         static constexpr T probas[] = { T(1.0), T(1.0), T(1.0), T(1.0), T(0.5), T(0.25), T(0.25) };
         auto hand1 = state & 7;
         auto hand2 = (state >> 3) & 7;
-        return static_cast<T>(probas[hand1] * probas[hand2]);
+        return probas[hand1] * probas[hand2];
     }
     State get_state() const {
         return nb_plies << 15 | action_history;

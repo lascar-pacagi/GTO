@@ -106,68 +106,68 @@ struct CFR {
             }
         }
     }
-    // T cfr_plus(int idx, T pi1, T pi2, T pc, int iter) {
-    //     if (pi1 == T{} && pi2 == T{}) return T{};
-    //     int start = tree.start_children_and_actions[idx];
-    //     int n = tree.nb_children[idx] >> 2;        
-    //     if (n == 0) {
-    //         return static_cast<T>(tree.children[start]);
-    //     }
-    //     int player = tree.nb_children[idx] & 3;        
-    //     int offset = idx_to_offset[idx];
-    //     if (player == CHANCE) {
-    //         T u{};
-    //         T* probas = &probas_regrets_and_strategies[offset];
-    //         for (int i = 0; i < n; i++) {
-    //             T p = probas[i];
-    //             //std::cout << idx << " @ " << p << '\n';
-    //             T v = cfr_plus(tree.children[start + 2*i], pi1, pi2, pc * p, iter);
-    //             u += p * v;
-    //         }
-    //         return u;
-    //     }
-    //     T* regrets = &probas_regrets_and_strategies[offset];
-    //     T* strategies = &probas_regrets_and_strategies[offset + n];
-    //     T regrets_sum{};
-    //     for (int i = 0; i < n; i++) {
-    //         regrets_sum += regrets[i];
-    //     }
-    //     std::array<T, Game::MAX_NB_PLAYER_ACTIONS> s;
-    //     if (regrets_sum > 0) {
-    //         for (int i = 0; i < n; i++) {
-    //             s[i] = regrets[i] / regrets_sum;
-    //         }
-    //     } else {
-    //         T p = static_cast<T>(1.0) / n;
-    //         for (int i = 0; i < n; i++) {
-    //             s[i] = p;
-    //         }
-    //     }        
-    //     T u{};
-    //     std::array<T, Game::MAX_NB_PLAYER_ACTIONS> utils;
-    //     if (player == PLAYER1) {
-    //         for (int i = 0; i < n; i++) {
-    //             utils[i] = cfr_plus(tree.children[start + i], s[i] * pi1, pi2, pc, iter);
-    //             u += s[i] * utils[i];
-    //         }
-    //         for (int i = 0; i < n; i++) {
-    //             regrets[i] += pi2 * pc * (utils[i] - u);
-    //             if (regrets[i] < 0) regrets[i] = 0;
-    //             strategies[i] += iter * pi1 * s[i];
-    //         }
-    //     } else {
-    //         for (int i = 0; i < n; i++) {
-    //             utils[i] = cfr_plus(tree.children[start + i], pi1, s[i] * pi2, pc, iter);
-    //             u += s[i] * utils[i];
-    //         }
-    //         for (int i = 0; i < n; i++) {
-    //             regrets[i] += pi1 * pc * (u - utils[i]);
-    //             if (regrets[i] < 0) regrets[i] = 0;
-    //             strategies[i] += iter * pi2 * s[i];
-    //         }
-    //     }
-    //     return u;
-    // }
+    T cfr_plus(int idx, T pi1, T pi2, T pc, int iter) {
+        if (pi1 == T{} && pi2 == T{}) return T{};
+        int start = tree.start_children_and_actions[idx];
+        int n = tree.nb_children[idx] >> 2;        
+        if (n == 0) {
+            return static_cast<T>(tree.children[start]);
+        }
+        int player = tree.nb_children[idx] & 3;        
+        int offset = idx_to_offset[idx];
+        if (player == CHANCE) {
+            T u{};
+            T* probas = &probas_regrets_and_strategies[offset];
+            for (int i = 0; i < n; i++) {
+                T p = probas[i];
+                //std::cout << idx << " @ " << p << '\n';
+                T v = cfr_plus(tree.children[start + 2*i], pi1, pi2, pc * p, iter);
+                u += p * v;
+            }
+            return u;
+        }
+        T* regrets = &probas_regrets_and_strategies[offset];
+        T* strategies = &probas_regrets_and_strategies[offset + n];
+        T regrets_sum{};
+        for (int i = 0; i < n; i++) {
+            regrets_sum += regrets[i];
+        }
+        std::array<T, Game::MAX_NB_PLAYER_ACTIONS> s;
+        if (regrets_sum > 0) {
+            for (int i = 0; i < n; i++) {
+                s[i] = regrets[i] / regrets_sum;
+            }
+        } else {
+            T p = static_cast<T>(1.0) / n;
+            for (int i = 0; i < n; i++) {
+                s[i] = p;
+            }
+        }        
+        T u{};
+        std::array<T, Game::MAX_NB_PLAYER_ACTIONS> utils;
+        if (player == PLAYER1) {
+            for (int i = 0; i < n; i++) {
+                utils[i] = cfr_plus(tree.children[start + i], s[i] * pi1, pi2, pc, iter);
+                u += s[i] * utils[i];
+            }
+            for (int i = 0; i < n; i++) {
+                regrets[i] += pi2 * pc * (utils[i] - u);
+                if (regrets[i] < 0) regrets[i] = 0;
+                strategies[i] += iter * pi1 * s[i];
+            }
+        } else {
+            for (int i = 0; i < n; i++) {
+                utils[i] = cfr_plus(tree.children[start + i], pi1, s[i] * pi2, pc, iter);
+                u += s[i] * utils[i];
+            }
+            for (int i = 0; i < n; i++) {
+                regrets[i] += pi1 * pc * (u - utils[i]);
+                if (regrets[i] < 0) regrets[i] = 0;
+                strategies[i] += iter * pi2 * s[i];
+            }
+        }
+        return u;
+    }
     T linear_cfr(int idx, T pi1, T pi2, T pc, int iter) {
         if (pi1 == T{} && pi2 == T{}) return T{};
         int start = tree.start_children_and_actions[idx];
@@ -228,7 +228,7 @@ struct CFR {
         }        
         return u;
     }
-    // T dcfr(int idx, T pi1, T pi2, T pc, T iter_alpha, T iter_beta, T iter_gamma) {
+    //T dcfr(int idx, T pi1, T pi2, T pc, T iter_alpha, T iter_beta, T iter_gamma) {
     //     if (pi1 == T{} && pi2 == T{}) return T{};
     //     int start = tree.start_children_and_actions[idx];
     //     int n = tree.nb_children[idx] >> 2;
@@ -291,7 +291,7 @@ struct CFR {
     //     return u;
     // }
     void solve(int nb_iterations) {
-        int nb_threads = omp_get_num_procs();
+        //int nb_threads = omp_get_num_procs();
         //nb_iterations = (nb_iterations + nb_threads - 1) / nb_threads;
         std::atomic<T> game_value{};
         // T alpha = static_cast<T>(1.5);
@@ -309,7 +309,7 @@ struct CFR {
             // T iter_gamma = std::pow(static_cast<T>(iter) / static_cast<T>(iter + 1), gamma);
             // game_value += dcfr(0, 1, 1, 1, iter_alpha, iter_beta, iter_gamma);               
             ++iter;
-        }        
+        }                
         std::cout << iter << '\n';    
         //std::cout << game_value / nb_iterations << '\n'; 
         std::cout << game_value / iter << '\n'; 

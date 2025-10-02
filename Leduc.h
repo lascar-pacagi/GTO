@@ -31,6 +31,157 @@ struct Leduc {
         action_history = 0;
         nb_plies = 0;
     }
+    private:
+    static bool is_hand(Action a) {
+        return JACK <= a && a <= KING;
+    }
+    static Action get_action(State state, int i) {
+        return Action((state & (0xFULL << i * 4)) >> i * 4);
+    }
+    public:
+    /*
+        0  1  2 3 4 5 6 7 8 9 10
+        h1 h2 1 2 f 1 2 1 2
+        h1 h2 1 2 1 f 1 2 1 2
+        h1 h2 1 2 1 2 f 1 2 1 2
+    */
+   static std::vector<std::pair<InfoSet, Action>> info_sets_and_actions(State state, int player) {
+        int nb_plies = state >> 48;
+        std::vector<std::pair<InfoSet, Action>> res;
+
+        using JumpTableFunc = void(*)(State, std::vector<std::pair<InfoSet, Action>>&);
+
+        if (player == PLAYER1) {
+            res.emplace_back(InfoSet((2ULL << 48) | (state & 0xFULL)), get_action(state, 2));
+            static const JumpTableFunc jump_table[] = {
+                /* 0-4 */ nullptr, nullptr, nullptr, nullptr, nullptr,
+                /* 5 */ [](State state, auto& res){ 
+                    res.emplace_back(InfoSet((4ULL << 48) | (state & 0xFF0FULL)), get_action(state, 4)); 
+                },
+                /* 6 */ [](State state, auto& res){ 
+                    res.emplace_back(InfoSet((5ULL << 48) | (state & 0xFFF0FULL)), get_action(state, 5)); 
+                },
+                /* 7 */ [](State state, auto& res){                
+                    res.emplace_back(InfoSet((4ULL << 48) | (state & 0xFF0FULL)), get_action(state, 4));
+                    res.emplace_back(InfoSet((6ULL << 48) | (state & 0xFFFF0FULL)), get_action(state, 6));                
+                },
+                /* 8 */ [](State state, auto& res){
+                    if (is_hand(get_action(state, 4))) {
+                        res.emplace_back(InfoSet((5ULL << 48) | (state & 0xFFF0FULL)), get_action(state, 5));
+                    } else {
+                        res.emplace_back(InfoSet((4ULL << 48) | (state & 0xFF0FULL)), get_action(state, 4));
+                    }
+                    res.emplace_back(InfoSet((7ULL << 48) | (state & 0xFFFFF0FULL)), get_action(state, 7));
+                },
+                /* 9 */ [](State state, auto& res){
+                    res.emplace_back(InfoSet((4ULL << 48) | (state & 0xFF0FULL)), get_action(state, 4));
+                    res.emplace_back(InfoSet((6ULL << 48) | (state & 0xFFFF0FULL)), get_action(state, 6));
+                    res.emplace_back(InfoSet((8ULL << 48) | (state & 0xFFFFFF0FULL)), get_action(state, 8));
+                },
+                /* 10 */ [](State state, auto& res){
+                    res.emplace_back(InfoSet((4ULL << 48) | (state & 0xFF0FULL)), get_action(state, 4));
+                    res.emplace_back(InfoSet((7ULL << 48) | (state & 0xFFFFF0FULL)), get_action(state, 7));
+                    res.emplace_back(InfoSet((9ULL << 48) | (state & 0xFFFFFFF0FULL)), get_action(state, 9));
+                },
+            };
+            if (nb_plies >= 5 && nb_plies <= 10) {
+                jump_table[nb_plies](state, res);
+            }
+        } else {
+            if (nb_plies >= 4) {
+                res.emplace_back(InfoSet((3ULL << 48) | (state & 0xFF0ULL)), get_action(state, 3));
+                static const JumpTableFunc jump_table[] = {
+                    /* 0-6 */ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                    /* 7 */ [](State state, auto& res){
+                        if (is_hand(get_action(state, 4))) {
+                            res.emplace_back(InfoSet((6ULL << 48) | (state & 0xFFFFF0ULL)), get_action(state, 6));
+                        } else {
+                            res.emplace_back(InfoSet((5ULL << 48) | (state & 0xFFFF0ULL)), get_action(state, 5));
+                        }
+                    },
+                    /* 8 */ [](State state, auto& res){ 
+                        res.emplace_back(InfoSet((7ULL << 48) | (state & 0xFFFFFF0ULL)), get_action(state, 7)); 
+                    },
+                    /* 9 */ [](State state, auto& res){
+                        res.emplace_back(InfoSet((5ULL << 48) | (state & 0xFFFF0ULL)), get_action(state, 5));
+                        res.emplace_back(InfoSet((8ULL << 48) | (state & 0xFFFFFFF0ULL)), get_action(state, 8));
+                    },
+                };                
+                if (nb_plies >= 7 && nb_plies <= 9) {
+                    jump_table[nb_plies](state, res);
+                }
+            }
+        }
+        return res;
+    }
+    // static std::vector<std::pair<InfoSet, Action>> info_sets_and_actions(State state, int player) {
+    //     int nb_plies = state >> 48;
+    //     std::vector<std::pair<InfoSet, Action>> res;
+    //     if (player == PLAYER1) {    
+    //         res.emplace_back(InfoSet((2ULL << 48) | (state & 0xFULL)), get_action(state, 2));
+    //         if (nb_plies == 5) {
+    //             res.emplace_back(InfoSet((4ULL << 48) | (state & 0xFF0FULL)), get_action(state, 4));
+    //         } else if (nb_plies == 6) {
+    //             res.emplace_back(InfoSet((5ULL << 48) | (state & 0xFFF0FULL)), get_action(state, 5));
+    //         } else if (nb_plies == 7) {                
+    //             res.emplace_back(InfoSet((4ULL << 48) | (state & 0xFF0FULL)), get_action(state, 4));
+    //             res.emplace_back(InfoSet((6ULL << 48) | (state & 0xFFFF0FULL)), get_action(state, 6));                
+    //         } else if (nb_plies == 8) {
+    //             if (is_hand(get_action(state, 4))) {
+    //                 res.emplace_back(InfoSet((5ULL << 48) | (state & 0xFFF0FULL)), get_action(state, 5));
+    //             } else {
+    //                 res.emplace_back(InfoSet((4ULL << 48) | (state & 0xFF0FULL)), get_action(state, 4));
+    //             }
+    //             res.emplace_back(InfoSet((7ULL << 48) | (state & 0xFFFFF0FULL)), get_action(state, 7));
+    //         } else if (nb_plies == 9) {
+    //             res.emplace_back(InfoSet((4ULL << 48) | (state & 0xFF0FULL)), get_action(state, 4));
+    //             res.emplace_back(InfoSet((6ULL << 48) | (state & 0xFFFF0FULL)), get_action(state, 6));
+    //             res.emplace_back(InfoSet((8ULL << 48) | (state & 0xFFFFFF0FULL)), get_action(state, 8));
+    //         } else if (nb_plies == 10) {
+    //             res.emplace_back(InfoSet((4ULL << 48) | (state & 0xFF0FULL)), get_action(state, 4));
+    //             res.emplace_back(InfoSet((7ULL << 48) | (state & 0xFFFFF0FULL)), get_action(state, 7));
+    //             res.emplace_back(InfoSet((9ULL << 48) | (state & 0xFFFFFFF0FULL)), get_action(state, 9));
+    //         }
+    //     } else {                    
+    //         if (nb_plies >= 4) {
+    //             res.emplace_back(InfoSet((3ULL << 48) | (state & 0xFF0ULL)), get_action(state, 3));
+    //             if (nb_plies == 7) {
+    //                 if (is_hand(get_action(state, 4))) {
+    //                     res.emplace_back(InfoSet((6ULL << 48) | (state & 0xFFFFF0ULL)), get_action(state, 6));
+    //                 } else {
+    //                     res.emplace_back(InfoSet((5ULL << 48) | (state & 0xFFFF0ULL)), get_action(state, 5));
+    //                 }
+    //             } else if (nb_plies == 8) {
+    //                 res.emplace_back(InfoSet((7ULL << 48) | (state & 0xFFFFFF0ULL)), get_action(state, 7));
+    //             } else if (nb_plies == 9) {
+    //                 res.emplace_back(InfoSet((5ULL << 48) | (state & 0xFFFF0ULL)), get_action(state, 5));
+    //                 res.emplace_back(InfoSet((8ULL << 48) | (state & 0xFFFFFFF0ULL)), get_action(state, 8));
+    //             }
+    //         }
+    //     };
+    //     return res;
+    // }
+    template<typename T = double>
+    static T chance_reach_proba(State state) {
+        auto hand1 = state & 0xFULL;
+        auto hand2 = (state >> 4) & 0xFULL;
+        T proba = static_cast<T>(1.0 / 3.0) * (hand1 == hand2 ? static_cast<T>(1.0 / 5.0) : static_cast<T>(2.0 / 5.0));
+        auto flop = get_action(state, 4);
+        if (!is_hand(flop)) {
+            flop = get_action(state, 5);
+        }
+        if (!is_hand(flop)) {
+            flop = get_action(state, 6);
+        }
+        if (is_hand(flop)) {
+            if (hand1 == hand2) {
+                proba *= static_cast<T>(0.5);
+            } else {
+                proba *= static_cast<T>(0.25) + (hand1 != flop && hand2 != flop) * static_cast<T>(0.25);
+            }
+        }
+        return proba;
+    }
     State get_state() const {
         return nb_plies << 48 | action_history;
     }

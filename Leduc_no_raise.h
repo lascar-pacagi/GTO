@@ -27,9 +27,60 @@ struct LeducNoRaise {
     uint64_t action_history = 0;
     uint64_t nb_plies = 0;
     mutable PRNG prng{static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
+    
+    private:
+    static bool is_hand(Action a) {
+        return JACK <= a && a <= KING;
+    }
+    static Action get_action(State state, int i) {
+        return Action((state & (0b111ULL << i * 3)) >> i * 3);
+    }
+
+    public:
     void reset() {
         action_history = 0;
         nb_plies = 0;
+    }
+    static std::vector<std::pair<InfoSet, Action>> info_sets_and_actions(State state, int player) {
+        int nb_plies = state >> 32;
+        std::vector<std::pair<InfoSet, Action>> res;        
+        if (player == PLAYER1) {
+            res.emplace_back(InfoSet((2ULL << 32) | (state & 0b111ULL)), get_action(state, 2));
+            if (nb_plies == 6) {
+                res.emplace_back(InfoSet((5ULL << 32) | (state & 0b111'111'111'000'111ULL)), get_action(state, 5));
+            } else if (nb_plies == 7) {
+                res.emplace_back(InfoSet((4ULL << 32) | (state & 0b111'111'000'111ULL)), get_action(state, 4));
+                res.emplace_back(InfoSet((6ULL << 32) | (state & 0b111'111'111'111'000'111ULL)), get_action(state, 6));
+            }
+        } else {
+            if (nb_plies >= 4) {
+                res.emplace_back(InfoSet((3ULL << 32) | (state & 0b111'111'000ULL)), get_action(state, 3));
+                if (nb_plies == 7) {
+                    res.emplace_back(InfoSet((6ULL << 32) | (state & 0b111'111'111'111'111'000ULL)), get_action(state, 6));
+                } else if (nb_plies == 8) {
+                    res.emplace_back(InfoSet((7ULL << 32) | (state & 0b111'111'111'111'111'111'000ULL)), get_action(state, 7));
+                }
+            }
+        };
+        return res;
+    }
+    template<typename T = double>
+    static T chance_reach_proba(State state) {
+        auto hand1 = state & 7;
+        auto hand2 = (state >> 3) & 7;
+        T proba = static_cast<T>(1.0 / 3.0) * (hand1 == hand2 ? static_cast<T>(1.0 / 5.0) : static_cast<T>(2.0 / 5.0));
+        auto flop = get_action(state, 4); 
+        if (!is_hand(flop)) {
+            flop = get_action(state, 5);
+        }
+        if (is_hand(flop)) {
+            if (hand1 == hand2) {
+                proba *= static_cast<T>(0.5);
+            } else {
+                proba *= static_cast<T>(0.25) + (hand1 != flop && hand2 != flop) * static_cast<T>(0.25);
+            }
+        }
+        return proba;
     }
     State get_state() const {
         return nb_plies << 32 | action_history;
