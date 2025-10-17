@@ -18,14 +18,8 @@ struct Strategy {
     std::vector<T> strategies;
 
     Action get_action(InfoSet info_set) const {
-        //std::cout << "info set " << info_set << '\n';
         int idx = info_set_to_idx.at(info_set);
         int n = info_set_to_nb_actions.at(info_set);
-        // std::cout << "actions: " << n << "\n";
-        // for (int i = 0; i < n; i++) {
-        //     std::cout << actions[idx + i] << ' ';
-        // }
-        // std::cout << '\n';
         std::uniform_real_distribution<T> d(0, 1);
         T r = d(mt);
         T sum{};

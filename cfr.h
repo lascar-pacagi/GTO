@@ -32,7 +32,7 @@ struct CFR {
                 }
             }
             for (int i = 0; i < 2 * n; i++) {
-                regrets_and_strategies[i] += values[i]; 
+                regrets_and_strategies[i] += values[i];
             }
             lock.store(false, std::memory_order_release);            
         }
@@ -101,7 +101,7 @@ struct CFR {
             }
         }
     }
-    T linear_cfr(int idx, T pi1, T pi2, T pc, int iter) {
+    T linear_cfr(int idx, T pi1, T pi2, T pc, T iter) {
         if (pi1 == T{} && pi2 == T{}) return T{};
         int start = tree.start_children_and_actions[idx];
         int n = tree.nb_children[idx] >> 2;
@@ -147,18 +147,84 @@ struct CFR {
         shard.add_regret_and_strategies(regrets_and_strategies, n);      
         return u;
     }
+    // T dcfr(int idx, T pi1, T pi2, T pc, const T alpha, const T beta, const T gamma) {
+    //     if (pi1 == T{} && pi2 == T{}) return T{};
+    //     int start = tree.start_children_and_actions[idx];
+    //     int n = tree.nb_children[idx] >> 2;
+    //     if (n == 0) {
+    //         return static_cast<T>(tree.children[start]);
+    //     }
+    //     int player = tree.nb_children[idx] & 3;        
+    //     if (player == CHANCE) {
+    //         int probas_idx = node_idx_to_data_idx[idx];
+    //         T u{};
+    //         for (int i = 0; i < n; i++) {
+    //             T p = probas[probas_idx + i];
+    //             T v = dcfr(tree.children[start + 2*i], pi1, pi2, pc * p, alpha, beta, gamma);
+    //             u += p * v;
+    //         }
+    //         return u;
+    //     }
+    //     std::array<T, Game::MAX_NB_PLAYER_ACTIONS> s;
+    //     auto& shard = shards[node_idx_to_data_idx[idx]];
+    //     shard.get_strategy_from_regrets(s, n);      
+    //     T u{};
+    //     std::array<T, Game::MAX_NB_PLAYER_ACTIONS> utils;
+    //     std::array<T, 2 * Game::MAX_NB_PLAYER_ACTIONS> regrets_and_strategies;
+    //     if (player == PLAYER1) {
+    //         for (int i = 0; i < n; i++) {
+    //             utils[i] = dcfr(tree.children[start + i], s[i] * pi1, pi2, pc, alpha, beta, gamma);
+    //             u += s[i] * utils[i];
+    //         }
+    //         for (int i = 0; i < n; i++) {
+    //             T regret = utils[i] - u;
+    //             regrets_and_strategies[i] = pi2 * pc * regret * (alpha * (regret > 0) + beta * (regret <= 0));
+    //             regrets_and_strategies[n + i] = pi1 * s[i] * gamma;
+    //         }
+    //     } else {
+    //         for (int i = 0; i < n; i++) {
+    //             utils[i] = dcfr(tree.children[start + i], pi1, s[i] * pi2, pc, alpha, beta, gamma);
+    //             u += s[i] * utils[i];
+    //         }
+    //         for (int i = 0; i < n; i++) {
+    //             T regret = u - utils[i];
+    //             regrets_and_strategies[i] = pi1 * pc * regret * (alpha * (regret > 0) + beta * (regret <= 0));
+    //             regrets_and_strategies[n + i] = pi2 * s[i] * gamma;
+    //         }
+    //     }
+    //     shard.add_regret_and_strategies(regrets_and_strategies, n);      
+    //     return u;
+    // }
     void solve(int nb_iterations) {
         std::atomic<T> game_value{};
         std::atomic<int> iter{1};
         #pragma omp parallel for
-        for (int i = 1; i <= nb_iterations; i++) {            
+        for (int i = 1; i <= nb_iterations; i++) {       
             game_value += linear_cfr(0, 1, 1, 1, iter.fetch_add(1, std::memory_order_relaxed));
-            ++iter;
         }
         std::cout << nb_iterations << '\n';
         std::cout << game_value / nb_iterations << '\n'; 
     }
-    void fill_strategy(int idx, Strategy<Game>& strategy) const {
+    // void solve(int nb_iterations) {
+    //     std::atomic<T> game_value{};
+    //     std::atomic<int> iter{1};
+    //     const T a = static_cast<T>(1.5);
+    //     const T b = static_cast<T>(0.0);
+    //     const T g = static_cast<T>(2.0);
+    //     #pragma omp parallel for
+    //     for (int i = 1; i <= nb_iterations; i++) {
+    //         int t = iter.fetch_add(1, std::memory_order_relaxed);
+    //         T tmp = std::pow(t, a);
+    //         T alpha = tmp / (tmp + static_cast<T>(1.0));
+    //         tmp = std::pow(t, b);
+    //         T beta = tmp / (tmp + static_cast<T>(1.0));
+    //         T gamma = std::pow(static_cast<T>(t) / (t + 1), g);
+    //         game_value += dcfr(0, 1, 1, 1, alpha, beta, gamma);            
+    //     }
+    //     std::cout << nb_iterations << '\n';
+    //     std::cout << game_value / nb_iterations << '\n'; 
+    // }
+    void fill_strategy(int idx, Strategy<Game, T>& strategy) const {
         int n = tree.nb_children[idx] >> 2;        
         if (n == 0) return;
         int player = tree.nb_children[idx] & 3;
