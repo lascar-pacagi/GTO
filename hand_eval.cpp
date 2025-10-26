@@ -20,6 +20,14 @@ struct Card {
     static constexpr const char* rank_chars = "23456789TJQKA";
     static constexpr const char* suit_chars = "cdhs";
 
+/*
+Bits: 31-29  28-16        15-12      11-8       7-0
+      ┌─────┬──────────┬──────────┬─────────┬────────┐
+      │ pad │ RankBits │ SuitBits │ Rank    │ Prime  │
+      └─────┴──────────┴──────────┴─────────┴────────┘
+       000   13 bits    4 bits     0-12      2-41
+*/
+
     static uint32_t make_card(int rank, int suit) {
         uint32_t rank_bit = 1 << (rank + 16);
         uint32_t suit_bit = 1 << (suit + 12);

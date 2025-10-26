@@ -5,8 +5,8 @@
 #include "Leduc.h"
 #include "game_tree.h"
 #include "cfr.h"
+#include "mccfr.h"
 #include "strategy.h"
-#include <bits/stdc++.h>
 #include <omp.h>
 #include "best_response.h"
 #include "util.h"
@@ -19,14 +19,15 @@ int main() {
     GameTree<Game> tree;
     cout << tree << '\n';
     CFR<Game> cfr(tree);
-    cfr.solve(10000000);
+    cfr.solve(1000000);
     Strategy<Game> strategy = cfr.get_strategy();
     cout << '\n' << strategy << '\n';
-    evaluate(tree, strategy, strategy);
-    Strategy<Game> br_player1 = best_response(tree, strategy, PLAYER1);
-    cout << '\n' << br_player1 << '\n';
-    evaluate(tree, br_player1, strategy);
-    Strategy<Game> br_player2 = best_response(tree, strategy, PLAYER2);
-    cout << '\n' << br_player2 << '\n';
-    evaluate(tree, strategy, br_player2);
+    // evaluate(tree, strategy, strategy);
+    // Strategy<Game> br_player1 = best_response(tree, strategy, PLAYER1);
+    // cout << '\n' << br_player1 << '\n';
+    // evaluate(tree, br_player1, strategy);
+    // Strategy<Game> br_player2 = best_response(tree, strategy, PLAYER2);
+    // cout << '\n' << br_player2 << '\n';
+    // evaluate(tree, strategy, br_player2);
+    cout << "exploitability: " << cfr.exploitability() << '\n';
 }
